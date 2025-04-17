@@ -1,32 +1,27 @@
 import java.util.*;
 import java.util.regex.Pattern;
 
-//nodo de la lista enlazada
 class Nodo<T> {
-    //atributos de la lista 
-    T dato;
-    Nodo<T> siguiente;//puntero
 
-    //constructor de la clase
+    T dato;
+    Nodo<T> siguiente;
+
     public Nodo(T dato) {
         this.dato = dato;
         this.siguiente = null;
     }
 }
 
-//clase de la lista enlazada
 class ListaEnlazada<T> {
-    //atributos de la clase 
-    private Nodo<T> cabeza; //se crea un nodo inicial
+
+    private Nodo<T> cabeza;
     private int tamaño;
 
-    //constructor 
     public ListaEnlazada() {
         cabeza = null;
         tamaño = 0;
     }
 
-    //metodo agregar 
     public void agregar(T dato) {
         Nodo<T> nuevoNodo = new Nodo<>(dato);
         if (cabeza == null) {
@@ -41,7 +36,6 @@ class ListaEnlazada<T> {
         tamaño++;
     }
 
-    //agregar elementosala lista
     public List<T> toList() {
         List<T> lista = new ArrayList<>();
         Nodo<T> actual = cabeza;
@@ -68,7 +62,7 @@ class Pila<T> {
         if (elementos.tamaño() == 0) {
             throw new EmptyStackException();
         }
-        
+
         List<T> lista = elementos.toList();
         T ultimo = lista.get(lista.size() - 1);
         elementos = new ListaEnlazada<>();
@@ -94,7 +88,7 @@ class Cola<T> {
         if (elementos.tamaño() == 0) {
             throw new NoSuchElementException();
         }
-        
+
         List<T> lista = elementos.toList();
         T primero = lista.get(0);
         elementos = new ListaEnlazada<>();
@@ -105,6 +99,27 @@ class Cola<T> {
     }
 
     public boolean estaVacia() {
+        return elementos.tamaño() == 0;
+    }
+
+    public T dequeue() {
+        if (isEmpty()) {
+            throw new NoSuchElementException();
+        }
+        List<T> lista = elementos.toList();
+        T primero = lista.get(0);
+        elementos = new ListaEnlazada<>();
+        for (int i = 1; i < lista.size(); i++) {
+            elementos.agregar(lista.get(i));
+        }
+        return primero;
+    }
+
+    public void enqueue(T elemento) {
+        elementos.agregar(elemento);
+    }
+
+    public boolean isEmpty() {
         return elementos.tamaño() == 0;
     }
 }
@@ -121,7 +136,7 @@ class Estudiante {
         if (!Pattern.matches("^[A-Za-z0-9._%+-]+@poligran\\.edu\\.co$", email)) {
             throw new IllegalArgumentException("Email debe ser @poligran.edu.co");
         }
-        
+
         this.usuario = usuario;
         this.email = email;
         this.contraseña = contraseña;
@@ -145,22 +160,52 @@ class Estudiante {
         }
     }
 
-    public String getUsuario() { return usuario; }
-    public String getEmail() { return email; }
-    public String getContraseña() { return contraseña; }
-    public List<HorarioClase> getHorario() { return horario.toList(); }
-    public List<Tarea> getTareasPendientes() { 
+    public String getUsuario() {
+        return usuario;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getContraseña() {
+        return contraseña;
+    }
+
+    public List<HorarioClase> getHorario() {
+        return horario.toList();
+    }
+
+    // Método para obtener lista de tareas pendientes (sin modificar la cola
+    // original)
+    public List<Tarea> obtenerListaTareasPendientes() {
         List<Tarea> lista = new ArrayList<>();
         Cola<Tarea> temp = new Cola<>();
-        
-        while (!tareasPendientes.estaVacia()) {
-            Tarea t = tareasPendientes.desencolar();
+
+        while (!tareasPendientes.isEmpty()) {
+            Tarea t = tareasPendientes.dequeue();
             lista.add(t);
-            temp.encolar(t);
+            temp.enqueue(t);
         }
-        
-        this.tareasPendientes = temp;
+
+        // Restaurar la cola original
+        tareasPendientes = temp;
         return lista;
+    }
+
+    // Getter para la cola de tareas pendientes
+    public Cola<Tarea> getTareasPendientes() {
+        return this.tareasPendientes;
+    }
+
+    // Setter para la cola de tareas pendientes
+    public void setTareasPendientes(Cola<Tarea> tareasPendientes) {
+        this.tareasPendientes = tareasPendientes;
+    }
+
+    // Getter para la pila de tareas completadas
+    public Pila<Tarea> getTareasCompletadas() {
+        return this.tareasCompletadas;
     }
 }
 
@@ -177,23 +222,104 @@ class HorarioClase {
         this.materia = materia;
     }
 
-    public String getDia() { return dia; }
-    public String getHoraInicio() { return horaInicio; }
-    public String getHoraFin() { return horaFin; }
-    public String getMateria() { return materia; }
+    public String getDia() {
+        return dia;
+    }
+
+    public String getHoraInicio() {
+        return horaInicio;
+    }
+
+    public String getHoraFin() {
+        return horaFin;
+    }
+
+    public String getMateria() {
+        return materia;
+    }
 }
 
 class Tarea {
-    private String descripcion;
-    private int prioridad;
+    private static int contadorIds = 1;
+
+    private final int id;
+    private final String descripcion;
+    private final int prioridad;
+    private boolean completada;
+    private final String fechaCreacion;
 
     public Tarea(String descripcion, int prioridad) {
+        this.id = contadorIds++;
         this.descripcion = descripcion;
-        this.prioridad = prioridad;
+        this.prioridad = validarPrioridad(prioridad);
+        this.completada = false;
+        this.fechaCreacion = java.time.LocalDate.now().toString();
     }
 
-    public String getDescripcion() { return descripcion; }
-    public int getPrioridad() { return prioridad; }
+    private int validarPrioridad(int prioridad) {
+        if (prioridad < 1 || prioridad > 10) {
+            throw new IllegalArgumentException("La prioridad debe estar entre 1 y 10");
+        }
+        return prioridad;
+    }
+
+    // --- Getters ---
+    public int getId() {
+        return id;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public int getPrioridad() {
+        return prioridad;
+    }
+
+    public boolean isCompletada() {
+        return completada;
+    }
+
+    public String getFechaCreacion() {
+        return fechaCreacion;
+    }
+
+    public void marcarComoCompletada() {
+        this.completada = true;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        Tarea tarea = (Tarea) o;
+        return id == tarea.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        String estado = completada ? "✓" : "✗";
+        String colorPrioridad = getColorPrioridad();
+        return String.format(
+                "\u001B[36m[%d]\u001B[0m %s %s \u001B[37m(Prioridad: %s%d\u001B[0m) \u001B[90m[Creada: %s]\u001B[0m",
+                id, estado, descripcion, colorPrioridad, prioridad, fechaCreacion);
+    }
+
+    private String getColorPrioridad() {
+        if (prioridad <= 3)
+            return "\u001B[31m";
+        if (prioridad <= 7)
+            return "\u001B[33m";
+        return "\u001B[32m";
+    }
+
 }
 
 public class SistemaEstudiantes {
@@ -238,16 +364,16 @@ public class SistemaEstudiantes {
     private void registrarEstudiante() {
         System.out.print("Ingrese usuario: ");
         String usuario = scanner.nextLine();
-        
+
         // Verificar si el usuario ya existe
         if (estudiantes.containsKey(usuario)) {
             System.out.println("Error: El usuario ya está registrado");
             return;
         }
-        
+
         System.out.print("Ingrese email (@poligran.edu.co): ");
         String email = scanner.nextLine();
-        
+
         System.out.print("Ingrese contraseña: ");
         String contraseña = scanner.nextLine();
 
@@ -263,13 +389,13 @@ public class SistemaEstudiantes {
     private void iniciarSesion() {
         System.out.print("Ingrese usuario: ");
         String usuario = scanner.nextLine();
-        
+
         // Verificar si el usuario existe
         if (!estudiantes.containsKey(usuario)) {
             System.out.println("Error: El usuario no está registrado");
             return;
         }
-        
+
         System.out.print("Ingrese contraseña: ");
         String contraseña = scanner.nextLine();
 
@@ -309,7 +435,7 @@ public class SistemaEstudiantes {
                         agregarTarea(estudiante);
                         break;
                     case 5:
-                        completarTarea(estudiante);
+                        completarTareaPorNombre(estudiante);
                         break;
                     case 6:
                         return;
@@ -328,25 +454,25 @@ public class SistemaEstudiantes {
             System.out.println("\nNo hay clases en el horario");
             return;
         }
-        
+
         System.out.println("\nHorario de clases:");
         for (HorarioClase clase : horario) {
-            System.out.printf("%s: %s - %s (%s)\n", 
-                clase.getDia(), clase.getHoraInicio(), 
-                clase.getHoraFin(), clase.getMateria());
+            System.out.printf("%s: %s - %s (%s)\n",
+                    clase.getDia(), clase.getHoraInicio(),
+                    clase.getHoraFin(), clase.getMateria());
         }
     }
 
     private void agregarClase(Estudiante estudiante) {
         System.out.print("Día (Lunes-Viernes): ");
         String dia = scanner.nextLine();
-        
+
         System.out.print("Hora inicio (HH:MM): ");
         String horaInicio = scanner.nextLine();
-        
+
         System.out.print("Hora fin (HH:MM): ");
         String horaFin = scanner.nextLine();
-        
+
         System.out.print("Materia: ");
         String materia = scanner.nextLine();
 
@@ -356,24 +482,26 @@ public class SistemaEstudiantes {
     }
 
     private void verTareasPendientes(Estudiante estudiante) {
-        List<Tarea> tareas = estudiante.getTareasPendientes();
-        if (tareas.isEmpty()) {
+        if (estudiante.getTareasPendientes().isEmpty()) {
             System.out.println("\nNo hay tareas pendientes");
             return;
         }
-        
+    
         System.out.println("\nTareas pendientes:");
-        int i = 1;
+        
+        // Convertimos la cola a lista temporal
+        List<Tarea> tareas = estudiante.obtenerListaTareasPendientes();
+        
+        int contador = 1;
         for (Tarea tarea : tareas) {
-            System.out.printf("%d. %s (Prioridad: %d)\n", 
-                i++, tarea.getDescripcion(), tarea.getPrioridad());
+            System.out.println(contador++ + ". " + tarea);
         }
     }
 
     private void agregarTarea(Estudiante estudiante) {
         System.out.print("Descripción de la tarea: ");
         String descripcion = scanner.nextLine();
-        
+
         System.out.print("Prioridad (1-10, 1=alta): ");
         try {
             int prioridad = Integer.parseInt(scanner.nextLine());
@@ -381,7 +509,7 @@ public class SistemaEstudiantes {
                 System.out.println("Error: La prioridad debe estar entre 1 y 10");
                 return;
             }
-            
+
             Tarea nuevaTarea = new Tarea(descripcion, prioridad);
             estudiante.agregarTarea(nuevaTarea);
             System.out.println("Tarea agregada!");
@@ -390,13 +518,45 @@ public class SistemaEstudiantes {
         }
     }
 
-    private void completarTarea(Estudiante estudiante) {
-        if (estudiante.getTareasPendientes().isEmpty()) {
-            System.out.println("No hay tareas pendientes para completar");
+    private void completarTareaPorNombre(Estudiante estudiante) {
+        List<Tarea> tareasMostrar = estudiante.obtenerListaTareasPendientes();
+
+        if (tareasMostrar.isEmpty()) {
+            System.out.println("\nNo hay tareas pendientes para completar");
             return;
         }
-        
-        estudiante.completarTarea();
-        System.out.println("Tarea completada!");
+
+        System.out.println("\nTareas pendientes:");
+        for (int i = 0; i < tareasMostrar.size(); i++) {
+            System.out.println((i + 1) + ". " + tareasMostrar.get(i).getDescripcion());
+        }
+
+        System.out.print("\nIngrese el nombre de la tarea a completar: ");
+        String nombreTarea = scanner.nextLine();
+
+        Cola<Tarea> nuevaCola = new Cola<>();
+        boolean tareaCompletada = false;
+
+        Cola<Tarea> tareasActuales = estudiante.getTareasPendientes();
+        while (!tareasActuales.isEmpty()) {
+            Tarea tareaActual = tareasActuales.dequeue();
+
+            if (!tareaCompletada && tareaActual.getDescripcion().equalsIgnoreCase(nombreTarea)) {
+                tareaActual.marcarComoCompletada();
+                estudiante.getTareasCompletadas().push(tareaActual);
+                tareaCompletada = true;
+                System.out.println("\nTarea '" + tareaActual.getDescripcion() + "' completada exitosamente!");
+            } else {
+                nuevaCola.enqueue(tareaActual);
+            }
+        }
+
+        estudiante.setTareasPendientes(nuevaCola);
+
+        if (!tareaCompletada) {
+            System.out.println("\nError: No se encontró una tarea con ese nombre");
+            System.out.println("\nTareas disponibles:");
+            estudiante.obtenerListaTareasPendientes().forEach(t -> System.out.println("- " + t.getDescripcion()));
+        }
     }
 }
