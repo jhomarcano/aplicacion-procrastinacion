@@ -520,7 +520,7 @@ public class SistemaEstudiantes {
 
     private void completarTareaPorNombre(Estudiante estudiante) {
         List<Tarea> tareasMostrar = estudiante.obtenerListaTareasPendientes();
-
+        
         if (tareasMostrar.isEmpty()) {
             System.out.println("\nNo hay tareas pendientes para completar");
             return;
